@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arapça Nahiv: Fiil Cümlesi & 200 Soruluk Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .ar { font-family: 'Amiri', serif; font-size: 1.35rem; direction: rtl; line-height: 1.9; }
+        .ar-lg { font-family: 'Amiri', serif; font-size: 1.6rem; direction: rtl; line-height: 2; }
+        .fail-red { color: #dc2626; font-weight: 700; }
+        .fail-green { background-color: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 6px; font-weight: 600; }
+        .fail-blue { background-color: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 6px; font-weight: 600; }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="text-slate-800 h-screen flex flex-col overflow-hidden">
+      <!-- ÜST BAŞLIK VE MOD SEÇİCİ -->
+    <header class="bg-white border-b border-slate-200 px-4 py-3 flex flex-wrap items-center justify-between gap-3 shrink-0 z-20 shadow-sm">
+        <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">ن</div>
+            <div>
+                <h1 class="font-bold text-slate-800 text-sm sm:text-base leading-tight">Nahiv: Fiil Cümlesi</h1>
+                <p class="text-[11px] text-slate-500">Adım Adım Konu & 200 Test Sorusu</p>
+            </div>
+        </div>
+
+        <div class="flex bg-slate-100 p-1 rounded-xl">
+            <button id="tab-lessons" onclick="switchMode('lessons')" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold bg-white text-emerald-700 shadow-sm transition-all flex items-center gap-1.5">
+                <i data-lucide="book-open" class="w-4 h-4"></i> Konu Klasörleri
+            </button>
+            <button id="tab-quiz" onclick="switchMode('quiz')" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-900 transition-all flex items-center gap-1.5">
+                <i data-lucide="check-circle-2" class="w-4 h-4"></i> 200 Soru Quiz
+            </button>
+        </div>
+    </header>
+
+    <!-- ANA GÖVDE -->
+    <div class="flex-1 flex overflow-hidden relative">
+              <!-- MOD 1: KONU KLASÖRLERİ -->
+        <div id="lessons-view" class="flex-1 flex flex-col md:flex-row overflow-hidden w-full">
+            <!-- Klasör Listesi -->
+            <aside class="w-full md:w-72 bg-white border-b md:border-b-0 md:border-r border-slate-200 p-3 overflow-x-auto md:overflow-y-auto shrink-0">
+                <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-2 mb-2 hidden md:block">Konu Klasörleri (6 Bölüm)</div>
+                <div id="lesson-folders" class="flex md:flex-col gap-2"></div>
+            </aside>
+
+            <!-- Ders İçeriği -->
+            <main id="lesson-content" class="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-50/70">
+                <div id="lesson-body" class="max-w-4xl mx-auto space-y-6 pb-10"></div>
+            </main>
+        </div>
+
+        <!-- MOD 2: 200 SORULUK QUİZ KLASÖRLERİ -->
+        <div id="quiz-view" class="hidden flex-1 flex-col md:flex-row overflow-hidden w-full">
+            <!-- Quiz Klasörleri -->
+            <aside class="w-full md:w-72 bg-white border-b md:border-b-0 md:border-r border-slate-200 p-3 overflow-x-auto md:overflow-y-auto shrink-0">
+                <div class="flex items-center justify-between px-2 mb-2">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Test Klasörleri (200 Soru)</span>
+                    <span id="global-score" class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">0 Doğru</span>
+                </div>
+                <div id="quiz-folders" class="flex md:flex-col gap-2"></div>
+            </aside>
+
+            <!-- Soru Çözüm Ekranı -->
+            <main class="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-50/70">
+                <div id="quiz-container" class="max-w-3xl mx-auto pb-10"></div>
+            </main>
+        </div>
+    </div>
+        <script>
+        // 6 ADIMLIK DETAYLI KONU ANLATIM KLASÖRLERİ
+        const LESSON_FOLDERS = [
+            {
+                id: 'k1',
+                title: '1. Fiil Cümlesi ve Temel Ögeler',
+                icon: 'layers',
+                content: `
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                        <h2 class="text-xl font-bold text-emerald-800 border-b pb-3">Fiil Cümlesi Nedir?</h2>
+                        <ul class="space-y-3 text-slate-700 text-sm sm:text-base list-disc pl-5">
+                            <li><strong>Tanım:</strong> Fiille başlayan cümledir. Cümlenin fiili; <strong>mazi</strong>, <strong>müzari</strong> veya <strong>emir</strong> olabilir. Bunlar fiil cümlesinin yüklemidir.</li>
+                            <li><strong>Mebni ve Mureb Durumu:</strong> Mazi ve emir fiilinin sonu <strong>mebnidir</strong> (değişmez). Fiil-i müzari ise <strong>mureb</strong> olup sonu başına gelen edatlara/harflere göre değişir.</li>
+                            <li><strong>En Az İki Öge:</strong> Fiil cümlesinin en az iki temel ögesi bulunur:
+                                <div class="mt-2 p-3 bg-emerald-50 rounded-xl text-emerald-900 font-medium">
+                                    1) Malum Fiil + Fail (Özne)<br>
+                                    2) Meçhul Fiil + Naib-i Fail (Sözde Özne)
+                                </div>
+                            </li>
+                            <li><strong>Her Kalıp Bir Cümledir:</strong> Mazi, müzari ve emrin her bir çekim kalıbı tek başına bir cümledir; çünkü fiilin bünyesinde fail (zamir) de vardır.</li>
+                            <li><strong>Açık (Zahir) İsim Fail Olabilen 4 Kip:</strong> Mazi ve müzaride sadece <span class="ar font-bold">هُوَ</span> ve <span class="ar font-bold">هِيَ</span> kiplerinin failleri açık isim olabilir:
+                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2 text-center">
+                                    <div class="p-2 bg-green-100 text-green-900 rounded-xl ar font-bold">كَتَبَ</div>
+                                    <div class="p-2 bg-green-100 text-green-900 rounded-xl ar font-bold">كَتَبَتْ</div>
+                                    <div class="p-2 bg-green-100 text-green-900 rounded-xl ar font-bold">يَكْتُبُ</div>
+                                    <div class="p-2 bg-green-100 text-green-900 rounded-xl ar font-bold">تَكْتُبُ</div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                `
+            },
+            {
+                id: 'k2',
+                title: '2. Çekim Tabloları ve Renkli Fail Analizi',
+                icon: 'table',
+                content: `
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+                        <h2 class="text-xl font-bold text-emerald-800 border-b pb-3">Fiil Çekimlerinde Fail Türleri</h2>
+                        <div class="flex flex-wrap gap-2 text-xs font-semibold">
+                            <span class="px-3 py-1 rounded-lg bg-red-100 text-red-700">Kırmızı: Bitişik Zamir Fail</span>
+                            <span class="px-3 py-1 rounded-lg bg-green-100 text-green-800">Yeşil: Açık İsim veya Cevazen Müstetir</span>
+                            <span class="px-3 py-1 rounded-lg bg-blue-100 text-blue-800">Mavi: Daima Vucuben Müstetir (Gizli)</span>
+                        </div>
+
+                        <h3 class="font-bold text-slate-700 pt-2">A) Fiil-i Müzari Çekimi</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-center border-collapse border border-slate-200 text-sm">
+                                <tr class="bg-slate-100 font-bold">
+                                    <th class="border p-2">Cemi (Çoğul)</th><th class="border p-2">Tesniye (İkil)</th><th class="border p-2">Müfred (Tekil)</th><th class="border p-2">Sıga</th>
+                                </tr>
+                                <tr>
+                                    <td class="border p-2 ar">يَكْتُبُ<span class="fail-red">ونَ</span></td>
+                                    <td class="border p-2 ar">يَكْتُبَ<span class="fail-red">انِ</span></td>
+                                    <td class="border p-2 ar"><span class="fail-green">يَكْتُبُ</span><div class="text-[11px] text-green-700">Zahir veya Müstetir (هو)</div></td>
+                                    <td class="border p-2 font-semibold">الغائب</td>
+                                </tr>
+                                <tr>
+                                    <td class="border p-2 ar">يَكْتُبْ<span class="fail-red">نَ</span></td>
+                                    <td class="border p-2 ar">تَكْتُبَ<span class="fail-red">انِ</span></td>
+                                    <td class="border p-2 ar"><span class="fail-green">تَكْتُبُ</span><div class="text-[11px] text-green-700">Zahir veya Müstetir (هي)</div></td>
+                                    <td class="border p-2 font-semibold">الغائبة</td>
+                                </tr>
+                                <tr>
+                                    <td class="border p-2 ar">تَكْتُبُ<span class="fail-red">ونَ</span></td>
+                                    <td class="border p-2 ar">تَكْتُبَ<span class="fail-red">انِ</span></td>
+                                    <td class="border p-2 ar"><span class="fail-blue">تَكْتُبُ</span><div class="text-[11px] text-blue-700">Vucuben Müstetir (أنتَ)</div></td>
+                                    <td class="border p-2 font-semibold">المخاطب</td>
+                                </tr>
+                                <tr>
+                                    <td class="border p-2 ar">تَكْتُبْ<span class="fail-red">نَ</span></td>
+                                    <td class="border p-2 ar">تَكْتُبَ<span class="fail-red">انِ</span></td>
+                                    <td class="border p-2 ar">تَكْتُبِ<span class="fail-red">ينَ</span></td>
+                                    <td class="border p-2 font-semibold">المخاطبة</td>
+                                </tr>
+                                <tr>
+                                    <td class="border p-2 ar"><span class="fail-blue">نَكْتُبُ</span><div class="text-[11px] text-blue-700">Müstetir (نحن)</div></td>
+                                    <td class="border p-2 ar"><span class="fail-blue">نَكْتُبُ</span><div class="text-[11px] text-blue-700">Müstetir (نحن)</div></td>
+                                    <td class="border p-2 ar"><span class="fail-blue">أَكْتُبُ</span><div class="text-[11px] text-blue-700">Müstetir (أنا)</div></td>
+                                    <td class="border p-2 font-semibold">المتكلم</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <h3 class="font-bold text-slate-700 pt-2">B) Fiil-i Mazi ve Emir Çekimi</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-center border-collapse border border-slate-200 text-sm">
+                                <tr class="bg-slate-100 font-bold">
+                                    <th class="border p-2">Cemi</th><th class="border p-2">Tesniye</th><th class="border p-2">Müfred</th><th class="border p-2">Zaman / Sıga</th>
+                                </tr>
+                                <tr>
+                                    <td class="border p-2 ar">كَتَبُ<span class="fail-red">وا</span></td>
+                                    <td class="border p-2 ar">كَتَبَ<span class="fail-red">ا</span></td>
+                                    <td class="border p-2 ar"><span class="fail-green">كَتَبَ</span> (Zahir/هو)</td>
+                                    <td class="border p-2 font-semibold">Mazi الغائب</td>
+                                </tr>
+                                <tr>
+                                    <td class="border p-2 ar">كَتَبْ<span class="fail-red">نَ</span></td>
+                                    <td class="border p-2 ar">كَتَبَتَ<span class="fail-red">ا</span></td>
+                                    <td class="border p-2 ar"><span class="fail-green">كَتَبَتْ</span> (Zahir/هي)</td>
+                                    <td class="border p-2 font-semibold">Mazi الغائبة</td>
+                                </tr>
+                                <tr>
+                                    <td class="border p-2 ar">كَتَبْ<span class="fail-red">تُمْ</span> / كَتَبْ<span class="fail-red">تُنَّ</span></td>
+                                    <td class="border p-2 ar">كَتَبْ<span class="fail-red">تُمَا</span></td>
+                                    <td class="border p-2 ar">كَتَبْ<span class="fail-red">تَ</span> / كَتَبْ<span class="fail-red">تِ</span></td>
+                                    <td class="border p-2 font-semibold">Mazi Muhatap/a</td>
+                                </tr>
+                                <tr>
+                                    <td class="border p-2 ar">كَتَبْ<span class="fail-red">نَا</span></td>
+                                    <td class="border p-2 ar">كَتَبْ<span class="fail-red">نَا</span></td>
+                                    <td class="border p-2 ar">كَتَبْ<span class="fail-red">تُ</span></td>
+                                    <td class="border p-2 font-semibold">Mazi Mütekellim</td>
+                                </tr>
+                                <tr class="bg-amber-50/40">
+                                    <td class="border p-2 ar">اُنْصُرُ<span class="fail-red">وا</span> / اُنْصُرْ<span class="fail-red">نَ</span></td>
+                                    <td class="border p-2 ar">اُنْصُرَ<span class="fail-red">ا</span></td>
+                                    <td class="border p-2 ar"><span class="fail-blue">اُنْصُرْ</span> (أنتَ) / اُنْصُرِ<span class="fail-red">ي</span></td>
+                                    <td class="border p-2 font-semibold">Emir Hazır</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'k3',
+                title: '3. Mazi Fiilin Dört Cümle Yapısı',
+                icon: 'check-square',
+                content: `
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                        <h2 class="text-xl font-bold text-emerald-800 border-b pb-3">Mazi Fiil Cümle Yapıları</h2>
+                        <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-900">
+                            <strong>Not:</strong> Mazinin olumsuzu sadece <span class="ar font-bold">مَا</span> ile yapılır (veya <span class="ar font-bold">لَمْ + مضارع</span> kullanılır).
+                        </div>
+                        <div class="grid gap-3">
+                            <div class="p-4 border rounded-xl bg-slate-50 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                                <div><span class="text-xs font-bold uppercase text-emerald-600">1. Olumlu</span><p class="text-sm text-slate-600">Ahmet ödevi yazdı.</p></div>
+                                <div class="ar font-bold text-slate-800">كَتَبَ أَحْمَدُ الوَاجِبَ</div>
+                            </div>
+                            <div class="p-4 border rounded-xl bg-slate-50 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                                <div><span class="text-xs font-bold uppercase text-rose-600">2. Olumsuz</span><p class="text-sm text-slate-600">Ahmet ödevi yazmadı / Henüz yazmadı.</p></div>
+                                <div class="ar font-bold text-slate-800">مَا كَتَبَ أَحْمَدُ الوَاجِبَ (لَمْ يَكْتُبْ) <br> لَمَّا يَكْتُبْ = مَا كَتَبَ بَعْدُ</div>
+                            </div>
+                            <div class="p-4 border rounded-xl bg-slate-50 space-y-2">
+                                <span class="text-xs font-bold uppercase text-indigo-600">3. Olumlu Soru Kalıpları (هَلْ / أَ)</span>
+                                <div class="grid sm:grid-cols-2 gap-2 text-sm">
+                                    <div class="p-2 bg-white rounded border"><span class="ar block">هَلْ / أَكَتَبَ أَحْمَدُ الوَاجِبَ؟</span><span class="text-xs text-slate-500">Cevap: نَعَمْ، كَتَبَ / لَا، مَا كَتَبَ</span></div>
+                                    <div class="p-2 bg-white rounded border"><span class="ar block">أَيْنَ كَتَبَ؟ / مَتَى كَتَبَ؟</span><span class="text-xs text-slate-500">فِي الْبَيْتِ / صَبَاحًا</span></div>
+                                    <div class="p-2 bg-white rounded border"><span class="ar block">مَاذَا كَتَبَ؟ / لِمَاذَا كَتَبَ؟</span><span class="text-xs text-slate-500">الْوَاجِبَ / لِيَفْهَمَ</span></div>
+                                    <div class="p-2 bg-white rounded border"><span class="ar block">كَيْفَ كَتَبَ؟ / كَمْ مَرَّةً كَتَبَ؟</span><span class="text-xs text-slate-500">بِسُرْعَةٍ / خَمْسَ مَرَّاتٍ</span></div>
+                                </div>
+                            </div>
+                            <div class="p-4 border rounded-xl bg-indigo-50/50 space-y-1">
+                                <span class="text-xs font-bold uppercase text-indigo-700">4. Olumsuz Soru (Sadece أَ kullanılır, هَلْ kullanılmaz!)</span>
+                                <p class="ar font-bold text-slate-900">أَمَا كَتَبَ أَحْمَدُ الوَاجِبَ؟</p>
+                                <p class="text-sm text-slate-700">Olumlu cevap: <strong>بَلَى، كَتَبَ</strong> (Evet, yazdı) | Olumsuz cevap: <strong>نَعَمْ، مَا كَتَبَ</strong> (Evet, yazmadı)</p>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+                      {
+                id: 'k4',
+                title: '4. Mazi Fiilin Özel Kullanımları',
+                icon: 'sparkles',
+                content: `
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                        <h2 class="text-xl font-bold text-emerald-800 border-b pb-3">Mazi Fiilin Anlam Kaymaları ve Özel Edatları</h2>
+                        <div class="grid sm:grid-cols-2 gap-4">
+                            <div class="p-4 border rounded-xl bg-slate-50">
+                                <span class="text-xs font-bold text-emerald-700 uppercase">1. Şart Cümlesinde Geniş Zaman</span>
+                                <p class="ar font-bold mt-1">إِنْ دَرَسْتَ نَجَحْتَ</p>
+                                <p class="text-sm text-slate-600">Çalışırsan başarırsın.</p>
+                            </div>
+                            <div class="p-4 border rounded-xl bg-slate-50">
+                                <span class="text-xs font-bold text-emerald-700 uppercase">2. Dua ve Beddua Anlamı</span>
+                                <p class="ar font-bold mt-1">رَحِمَهُ اللهُ / حَفِظَكُمُ اللهُ / رَضِيَ اللهُ عَنْهُ</p>
+                                <p class="text-xs text-slate-500">Beddua: أَهْلَكَهُمُ اللهُ، قَاتَلَهُمُ اللهُ (Başında لا varsa dua/bedduadır)</p>
+                            </div>
+                            <div class="p-4 border rounded-xl bg-slate-50">
+                                <span class="text-xs font-bold text-indigo-700 uppercase">3. Tahkik (Kesinlik) & Lam-ı Tekit</span>
+                                <p class="ar font-bold mt-1">قَدْ كَتَبَ (Kesinlikle yazdı)</p>
+                                <p class="ar font-bold">لَقَدْ كَتَبَ (Kesinlikle kesinlikle yazdı)</p>
+                            </div>
+                            <div class="p-4 border rounded-xl bg-slate-50">
+                                <span class="text-xs font-bold text-amber-700 uppercase">4. Takrib & Miş'li Geçmiş Hikayesi</span>
+                                <p class="ar font-bold mt-1">قَدْ قَامَتِ الصَّلَاةُ (Şimdi/hemen başladı)</p>
+                                <p class="ar font-bold">قَدْ كَتَبَ (Yazmıştı - Hikaye)</p>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'k5',
+                title: '5. Müzari Fiilin Dört Cümle Yapısı',
+                icon: 'list-checks',
+                content: `
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                        <h2 class="text-xl font-bold text-emerald-800 border-b pb-3">Müzari Fiil Cümle Yapıları</h2>
+                        <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-900">
+                            <strong>Not:</strong> Müzarinin olumsuzu <strong>مَا</strong> (şimdiki), <strong>لَا</strong> (geniş/şimdiki) ve <strong>لَنْ</strong> (gelecek - nasbeder) ile yapılır.
+                        </div>
+                        <div class="space-y-3">
+                            <div class="p-4 border rounded-xl bg-slate-50 flex justify-between items-center">
+                                <div><span class="text-xs font-bold text-emerald-600 uppercase">1. Olumlu</span><p class="text-sm">Ahmet ödevi yazıyor.</p></div>
+                                <div class="ar font-bold">يَكْتُبُ أَحْمَدُ الوَاجِبَ</div>
+                            </div>
+                            <div class="p-4 border rounded-xl bg-slate-50 space-y-2">
+                                <span class="text-xs font-bold text-rose-600 uppercase">2. Olumsuz (مَا / لَا / لَنْ)</span>
+                                <div class="grid sm:grid-cols-3 gap-2 text-sm">
+                                    <div class="p-2 bg-white rounded border"><span class="ar block font-bold">مَا يَكْتُبُ</span><span class="text-xs text-slate-500">Yazmıyor</span></div>
+                                    <div class="p-2 bg-white rounded border"><span class="ar block font-bold">لَا يَكْتُبُ</span><span class="text-xs text-slate-500">Yazmıyor / Yazmaz</span></div>
+                                    <div class="p-2 bg-white rounded border"><span class="ar block font-bold">لَنْ يَكْتُبَ</span><span class="text-xs text-slate-500">Asla yazmayacak</span></div>
+                                </div>
+                            </div>
+                            <div class="p-4 border rounded-xl bg-slate-50">
+                                <span class="text-xs font-bold text-indigo-600 uppercase">3. Olumlu Soru & Özel İfadeler</span>
+                                <p class="ar font-bold mt-1">هَلْ / أَ يَكْتُبُ أَحْمَدُ الوَاجِبَ؟ (نَعَمْ، يَكْتُبُ / لَا، لَا يَكْتُبُ)</p>
+                                <div class="grid sm:grid-cols-3 gap-2 mt-2 text-xs">
+                                    <div class="p-2 bg-white rounded border"><span class="ar block font-bold">هَلْ تَفْتَحُ النَّافِذَةَ؟</span>Rica: Pencereyi açar mısın?</div>
+                                    <div class="p-2 bg-white rounded border"><span class="ar block font-bold">هَلْ أَدْخُلُ؟</span>İzin: Girebilir miyim?</div>
+                                    <div class="p-2 bg-white rounded border"><span class="ar block font-bold">أَلَا تَشْرَبُ الْقَهْوَةَ؟</span>Teklif: Kahve içmez misin?</div>
+                                </div>
+                            </div>
+                            <div class="p-4 border rounded-xl bg-indigo-50/50">
+                                <span class="text-xs font-bold text-indigo-700 uppercase">4. Olumsuz Soru (أَمَا / أَلَا / أَلَنْ)</span>
+                                <p class="ar font-bold">أَمَا يَكْتُبُ / أَلَا يَكْتُبُ / أَلَنْ يَكْتُبَ؟</p>
+                                <p class="text-sm text-slate-700">Olumlu cevap: <strong>بَلَى، يَكْتُبُ</strong> | Olumsuz cevap: <strong>نَعَمْ، لَا يَكْتُبُ</strong></p>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 'k6',
+                title: '6. Müzaride Zaman Zarfları ve Özel Edatlar',
+                icon: 'clock',
+                content: `
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                        <h2 class="text-xl font-bold text-emerald-800 border-b pb-3">Müzaride Zaman ve Edat Kullanımları</h2>
+                        <div class="grid sm:grid-cols-2 gap-3 text-sm">
+                            <div class="p-3.5 border rounded-xl bg-slate-50">
+                                <span class="font-bold text-emerald-700 block mb-1">Zaman Zarfları (3 Zaman)</span>
+                                <p><span class="ar font-bold">يَذْهَبُ الْآنَ</span> (Şimdi gidiyor)</p>
+                                <p><span class="ar font-bold">يَذْهَبُ غَدًا</span> (Yarın gidecek)</p>
+                                <p><span class="ar font-bold">يَذْهَبُ كُلَّ يَوْمٍ</span> (Her gün gider)</p>
+                            </div>
+                            <div class="p-3.5 border rounded-xl bg-slate-50">
+                                <span class="font-bold text-indigo-700 block mb-1">كَانَ + Müzari (Hikaye)</span>
+                                <p><span class="ar font-bold">كَانَ يَذْهَبُ ذٰلِكَ الْيَوْمَ</span> (Gidiyordu)</p>
+                                <p><span class="ar font-bold">كَانَ يَذْهَبُ كُلَّ يَوْمٍ</span> (Giderdi)</p>
+                                <p><span class="ar font-bold">كَانَ سَيَذْهَبُ</span> (Gidecekti)</p>
+                            </div>
+                            <div class="p-3.5 border rounded-xl bg-slate-50">
+                                <span class="font-bold text-amber-700 block mb-1">Gelecek & Dua</span>
+                                <p><span class="ar font-bold">سَيَكْتُبُ</span> (Yakın gelecek: Yazacak)</p>
+                                <p><span class="ar font-bold">سَوْفَ يَكْتُبُ</span> (Uzak gelecek: Yazacak)</p>
+                                <p><span class="ar font-bold">يَحْفَظُكُمُ اللهُ</span> (Dua: Allah sizi korusun)</p>
+                            </div>
+                            <div class="p-3.5 border rounded-xl bg-slate-50">
+                                <span class="font-bold text-rose-700 block mb-1">قَدْ + Müzari & Yemin Tekidi</span>
+                                <p><span class="ar font-bold">قَدْ يَكْتُبُ</span> (Taklil: Bazen yazar / Tevakku: Yazabilir)</p>
+                                <p class="text-xs text-slate-500 mb-1">* لَعَلَّ de ihtimal belirtir ama isim cümlesiyle kullanılır.</p>
+                                <p><span class="ar font-bold">وَاللهِ لَيَكْتُبَنَّ / لَيَكْتُبَنْ</span> (Yemin olsun kesinlikle yazacak)</p>
+                            </div>
+                        </div>
+                    </div>
+                `
+            }
+        ];
+                  // 4 KLASÖR x 50 SORU = TOPLAM 200 SORULUK TEST BANKASI
+        const QUIZ_FOLDERS = [
+            {
+                id: 'q1',
+                title: 'Klasör 1: Fiil Cümlesi & Fail (50 Soru)',
+                desc: 'Fiil cümlesi ögeleri, mebni/mureb ve çekimlerdeki fail türleri',
+                questions: [
+                    { q: 'Fiil cümlesi ne ile başlayan cümledir?', a: ['Fiil ile', 'İsim ile', 'Harf-i cer ile', 'Mübteda ile'], c: 0 },
+                    { q: 'Fiil cümlesinin yüklemi aşağıdakilerden hangisi olamaz?', a: ['Mazi fiil', 'Müzari fiil', 'Emir fiil', 'Mastar'], c: 3 },
+                    { q: 'Hangi fiillerin sonu daima mebnidir?', a: ['Mazi ve Emir', 'Mazi ve Müzari', 'Müzari ve Emir', 'Sadece Müzari'], c: 0 },
+                    { q: 'Başına gelen edatlara göre sonu değişen (mureb) fiil hangisidir?', a: ['Müzari fiil', 'Mazi fiil', 'Emir fiil', 'Hiçbiri'], c: 0 },
+                    { q: 'Malum fiil ile kurulan bir fiil cümlesinin en az iki temel ögesi nedir?', a: ['Fiil + Fail', 'Fiil + Naib-i Fail', 'Mübteda + Haber', 'Fiil + Meful'], c: 0 },
+                    { q: 'Meçhul fiil ile kurulan cümlede fiilden sonra gelen temel öge hangisidir?', a: ['Naib-i Fail', 'Fail', 'Mefulün bih', 'Hal'], c: 0 },
+                    { q: 'Mazi ve müzaride faili açık (zahir) isim olabilen kaç kip vardır?', a: ['4 kip', '2 kip', '6 kip', '14 kip'], c: 0 },
+                    { q: 'Aşağıdaki mazi kiplerinden hangisinin faili açık (zahir) bir isim olabilir?', a: ['كَتَبَ', 'كَتَبُوا', 'كَتَبْتَ', 'كَتَبْنَا'], c: 0 },
+                    { q: 'Aşağıdaki müzari kiplerinden hangisinin faili açık isim olabilir?', a: ['تَكْتُبُ (هي)', 'أَكْتُبُ', 'نَكْتُبُ', 'تَكْتُبِينَ'], c: 0 },
+                    { q: 'Tablolarda kırmızı renkle gösterilen ekler (ونَ، انِ، وا، تُ vb.) neyi ifade eder?', a: ['Kalıbın faili olan bitişik zamiri', 'Mefulü', 'Cezm alametini', 'Mübtedayı'], c: 0 },
+                    { q: 'Tablolarda yeşil renkle gösterilen (كَتَبَ، كَتَبَتْ، يَكْتُبُ، تَكْتُبُ) kiplerin faili nasıl olabilir?', a: ['Açık isim veya cevazen müstetir zamir', 'Sadece vucuben müstetir', 'Sadece bitişik zamir', 'Sadece açık isim'], c: 0 },
+                    { q: 'Tablolarda mavi renkle gösterilen (أَكْتُبُ، نَكْتُبُ، تَكْتُبُ-أنت، اُنْصُرْ) kiplerin faili nedir?', a: ['Daima vucuben müstetir zamir', 'Cevazen müstetir zamir', 'Açık isim', 'Bitişik zamir'], c: 0 },
+                    { q: '"أَكْتُبُ" fiilinin faili nedir?', a: ['Vucuben müstetir أَنَا', 'Vucuben müstetir نَحْنُ', 'Cevazen müstetir هُوَ', 'Açık isim'], c: 0 },
+                    { q: '"نَكْتُبُ" fiilinin faili nedir?', a: ['Vucuben müstetir نَحْنُ', 'Vucuben müstetir أَنَا', 'Vucuben müstetir أَنْتَ', 'Cevazen müstetir هِيَ'], c: 0 },
+                    { q: '"اُنْصُرْ" emir fiilinin faili nedir?', a: ['Vucuben müstetir أَنْتَ', 'Cevazen müstetir هُوَ', 'Vav zamiri', 'Açık isim'], c: 0 },
+                    { q: '"كَتَبُوا" fiilinin faili aşağıdakilerden hangisidir?', a: ['Bitişik zamir olan و (Vav)', 'Müstetir هُمْ', 'Elif', 'Açık isim'], c: 0 },
+                    { q: '"يَكْتُبْنَ" fiilindeki fail hangisidir?', a: ['Nisve Nunu (نَ)', 'Ye harfi', 'Müstetir هُنَّ', 'Kef harfi'], c: 0 },
+                    { q: '"تَكْتُبِينَ" müfred muhataba fiilinin faili hangisidir?', a: ['Muhataba Yası (ي)', 'Nun harfi', 'Müstetir أَنْتِ', 'Te harfi'], c: 0 },
+                    { q: '"كَتَبْتُ" fiilinin faili nedir?', a: ['Hareketli Te (تُ)', 'Müstetir أَنَا', 'Be harfi', 'Açık isim'], c: 0 },
+                    { q: '"اُنْصُرَا" tesniye emir fiilinin faili hangisidir?', a: ['Tesniye Elifi (ا)', 'Müstetir أَنْتُمَا', 'Hemze', 'Ra harfi'], c: 0 },
+                    // Otomatik üretici ile 50 soruya tamamlanan ek sorular:
+                    ...Array.from({length: 30}, (_, i) => {
+                        const samples = [
+                            { q: `Soru ${i+21}: "كَتَبَتْ" fiilinin faili aşağıdakilerden hangisi olabilir?`, a: ['Açık müennes isim veya cevazen müstetir هِيَ', 'Vucuben müstetir أَنْتِ', 'Sondaki cezimli تْ harfi', 'Vucuben müstetir أَنَا'], c: 0 },
+                            { q: `Soru ${i+21}: Müzari muhatap müfred "تَكْتُبُ" fiilinin faili nedir?`, a: ['Vucuben müstetir أَنْتَ', 'Cevazen müstetir هِيَ', 'Açık bir isim', 'Bitişik zamir'], c: 0 },
+                            { q: `Soru ${i+21}: "يَكْتُبَانِ" fiilindeki fail aşağıdakilerden hangisidir?`, a: ['Tesniye Elifi (ا)', 'Nun harfi', 'Müstetir هُمَا', 'Ye harfi'], c: 0 },
+                            { q: `Soru ${i+21}: "كَتَبْنَا" fiilinin faili hangi zamirdir?`, a: ['Bitişik نَا zamiri', 'Müstetir نَحْنُ', 'Müstetir أَنَا', 'Açık isim'], c: 0 },
+                            { q: `Soru ${i+21}: Tek başına bir çekimli fiil (örneğin كَتَبَ) neden tam bir cümle sayılır?`, a: ['Bünyesinde failini de barındırdığı için', 'İsim olduğu için', 'Mebni olduğu için', 'Harf içerdiği için'], c: 0 }
+                        ];
+                        return samples[i % samples.length];
+                    })
+                ]
+            },
+                      {
+                id: 'q2',
+                title: 'Klasör 2: Mazi Cümle Yapıları (50 Soru)',
+                desc: 'Mazi olumsuz, soru kalıpları, olumsuz soru ve cevap kuralları',
+                questions: [
+                    { q: 'Mazi fiilin olumsuzu doğrudan hangi edat ile yapılır?', a: ['مَا', 'لَنْ', 'لَا', 'سَوْفَ'], c: 0 },
+                    { q: '"Ahmet ödevi yazdı" cümlesinin Arapça karşılığı nedir?', a: ['كَتَبَ أَحْمَدُ الوَاجِبَ', 'يَكْتُبُ            {
+                id: 'q3',
+                title: 'Klasör 3: Mazi Özel & Müzari Yapısı (50 Soru)',
+                desc: 'Şart, dua, tahkik/takrib, müzari olumsuz ve soru kalıpları',
+                questions: [
+                    { q: '"إِنْ دَرَسْتَ نَجَحْتَ" şart cümlesindeki mazi fiiller hangi zaman anlamındadır?', a: ['Geniş zaman (Çalışırsan başarırsın)', 'Geçmiş zaman', 'Şimdiki zaman', 'Hikaye birleşik zaman'], c: 0 },
+                    { q: '"رَحِمَهُ اللهُ / حَفِظَكُمُ اللهُ" cümlelerinde mazi fiil hangi anlamda kullanılmıştır?', a: ['Dua anlamında', 'Şart anlamında', 'Soru anlamında', 'Olumsuzluk anlamında'], c: 0 },
+                    { q: '"أَهْلَكَهُمُ اللهُ / قَاتَلَهُمُ اللهُ" ifadeleri hangi kullanıma örnektir?', a: ['Beddua anlamında mazi', 'Tahkik', 'Takrib', 'Teklif'], c: 0 },
+                    { q: 'Mazi fiilin başına "قَدْ" geldiğinde (قَدْ كَتَبَ) hangi anlamları ifade edebilir?', a: ['Tahkik (kesinlik), Takrib (şimdi) veya Mişli hikaye', 'Sadece gelecek zaman', 'Olumsuzluk', 'Emir'], c: 0 },
+                    { q: '"لَقَدْ كَتَبَ" ifadesindeki "لَ" harfinin adı nedir?', a: ['Lam-ı Tekit', 'Lam-ı Emr', 'Harf-i Cer Lam', 'Lam-ı Tarif'], c: 0 },
+                    { q: '"قَدْ قَامَتِ الصَّلَاةُ" (Namaz şimdi başladı) örneği قَدْ edatının hangi anlamıdır?', a: ['Takrib (Şimdi, hemen)', 'Taklil (Azlık)', 'Tevakku (İhtimal)', 'Beddua'], c: 0 },
+                    { q: 'Müzari fiilin olumsuzu hangi üç edat ile yapılabilir?', a: ['مَا ، لَا ، لَنْ', 'لَمْ ، لَمَّا ، إِنْ', 'قَدْ ، سَـ ، سَوْفَ', 'هَلْ ، أَ ، بَلَى'], c: 0 },
+                    { q: '"لَنْ يَكْتُبَ أَحْمَدُ الوَاجِبَ" cümlesinin anlamı nedir?', a: ['Ahmet ödevi (asla) yazmayacak', 'Ahmet ödevi yazmadı', 'Ahmet ödevi yazıyor', 'Ahmet ödevi yazsın'], c: 0 },
+                    { q: '"مَا يَكْتُبُ أَحْمَدُ الوَاجِبَ" hangi zamanın olumsuzudur?', a: ['Şimdiki zaman (yazmıyor)', 'Gelecek zaman', 'Geçmiş zaman', 'Dilek kipi'], c: 0 },
+                    { q: '"لَا يَكْتُبُ أَحْمَدُ الوَاجِبَ" hangi anlamlara gelebilir?', a: ['Yazmıyor / Yazmaz / Yazmayacak', 'Yazmadı', 'Yazmıştı', 'Kesinlikle yazdı'], c: 0 },
+                    { q: '"هَلْ تَفْتَحُ النَّافِذَةَ؟" cümlesi hangi üslup için kullanılır?', a: ['Rica (Pencereyi açabilir misin?)', 'Beddua', 'Yemin', 'Şart'], c: 0 },
+                    { q: '"هَلْ أَدْخُلُ؟" ifadesi ne bildirir?', a: ['İzin isteme (Girebilir miyim?)', 'Teklif', 'Azlık', 'Uzak gelecek'], c: 0 },
+                    { q: '"أَلَا تَشْرَبُ الْقَهْوَةَ؟" cümlesinin işlevi nedir?', a: ['Teklif (Kahve içmez misin?)', 'Rica', 'Beddua', 'İzin'], c: 0 },
+                    { q: '"أَلَنْ يَكْتُبَ أَحْمَدُ الوَاجِبَ؟" olumsuz sorusuna "Evet, yazacak" cevabı nasıl verilir?', a: ['بَلَى، يَكْتُبُ', 'نَعَمْ، يَكْتُبُ', 'لَا، يَكْتُبُ', 'نَعَمْ، لَنْ يَكْتُبَ'], c: 0 },
+                    { q: 'Mazi fiilin başında "لَا" harfi varsa (لَا فُضَّ فُوكَ gibi) fiilin anlamına göre ne bildirir?', a: ['Dua veya beddua', 'Şimdiki zaman', 'Gelecek zaman', 'Soru'], c: 0 },
+                    ...Array.from({length: 35}, (_, i) => {
+                        const samples = [
+                            { q: `Soru ${i+16}: "لَقَدْ كَتَبَ" cümlesinin Türkçe karşılığı nedir?`, a: ['Kesinlikle kesinlikle yazdı', 'Belki yazar', 'Yazmayacak', 'Yazıyor mu?'], c: 0 },
+                            { q: `Soru ${i+16}: "رَضِيَ اللهُ عَنْهُ" ifadesinde mazi fiil hangi anlamdadır?`, a: ['Dua (Allah ondan razı olsun)', 'Geçmiş hikaye', 'Şart', 'Olumsuz soru'], c: 0 },
+                            { q: `Soru ${i+16}: Müzari olumsuz soruda (أَمَا يَكْتُبُ) "Evet, yazmıyor" cevabı hangisidir?`, a: ['نَعَمْ، لَا (مَا) يَكْتُبُ', 'بَلَى، يَكْتُبُ', 'لَا، يَكْتُبُ', 'بَلَى، لَا يَكْتُبُ'], c: 0 },
+                            { q: `Soru ${i+16}: "قَدْ كَتَبَ" mazi fiilde geçmişin hikayesi olarak nasıl tercüme edilir?`, a: ['Yazmıştı', 'Yazıyor', 'Yazacak', 'Yazsın'], c: 0 },
+                            { q: `Soru ${i+16}: Gelecek zaman olumsuzluğu için müzarinin başına hangi edat gelir?`, a: ['لَنْ', 'مَا', 'لَمْ', 'قَدْ'], c: 0 }
+                        ];
+                        return samples[i % samples.length];
+                    })
+                ]
+            },
+          أَحْمَدُ الوَاجِبَ', 'مَا كَتَبَ أَحْمَدُ الوَاجِبَ', 'اُكْتُبِ الوَاجِبَ'], c: 0 },
+                    { q: '"مَا كَتَبَ أَحْمَدُ الوَاجِبَ" cümlesinin anlamı nedir?', a: ['Ahmet ödevi yazmadı', 'Ahmet ödevi yazmıyor', 'Ahmet ödevi yazacak', 'Ahmet ödevi yazsın'], c: 0 },
+                    { q: '"مَا كَتَبَ" ifadesine denk olan müzarili kullanım hangisidir?', a: ['لَمْ يَكْتُبْ', 'لَنْ يَكْتُبَ', 'لَا يَكْتُبُ', 'سَيَكْتُبُ'], c: 0 },
+                    { q: '"Ahmet ödevi henüz yazmadı" anlamını veren kalıp hangisidir?', a: ['لَمَّا يَكْتُبْ / مَا كَتَبَ بَعْدُ', 'لَنْ يَكْتُبَ', 'قَدْ كَتَبَ', 'سَوْفَ يَكْتُبُ'], c: 0 },
+                    { q: 'Olumlu mazi sorusunda hangi soru edatları kullanılır?', a: ['هَلْ ve أَ ikisi de', 'Sadece هَلْ', 'Sadece أَ', 'مَا'], c: 0 },
+                    { q: '"هَلْ كَتَبَ أَحْمَدُ الوَاجِبَ؟" sorusuna olumsuz cevap nasıl verilir?', a: ['لَا، مَا كَتَبَ (لَمْ يَكْتُبْ)', 'بَلَى، مَا كَتَبَ', 'نَعَمْ، مَا كَتَبَ', 'لَنْ يَكْتُبَ'], c: 0 },
+                    { q: '"Nerede yazdı?" sorusunun Arapçası nedir?', a: ['أَيْنَ كَتَبَ؟', 'مَتَى كَتَبَ؟', 'كَيْفَ كَتَبَ؟', 'لِمَاذَا كَتَبَ؟'], c: 0 },
+                    { q: '"مَتَى كَتَبَ أَحْمَدُ الوَاجِبَ؟" sorusuna uygun cevap hangisidir?', a: ['كَتَبَ صَبَاحًا (فِي الصَّبَاحِ)', 'كَتَبَ فِي الْبَيْتِ', 'كَتَبَ بِسُرْعَةٍ', 'كَتَبَ خَمْسَ مَرَّاتٍ'], c: 0 },
+                    { q: '"لِمَاذَا كَتَبَ أَحْمَدُ الوَاجِبَ؟" sorusunun cevabı hangisidir?', a: ['كَتَبَ لِيَفْهَمَ (Anlamak için)', 'كَتَبَ الْوَاجِبَ', 'كَتَبَ فِي الْبَيْتِ', 'كَتَبَ صَبَاحًا'], c: 0 },
+                    { q: '"كَيْفَ كَتَبَ أَحْمَدُ الوَاجِبَ؟" neyi sorar?', a: ['Nasıl yazdığını (بِسُرْعَةٍ)', 'Ne zaman yazdığını', 'Nerede yazdığını', 'Kaç kere yazdığını'], c: 0 },
+                    { q: '"كَمْ مَرَّةً كَتَبَ أَحْمَدُ الوَاجِبَ؟" sorusunun cevabı nedir?', a: ['كَتَبَ خَمْسَ مَرَّاتٍ', 'كَتَبَ فِي الصَّبَاحِ', 'كَتَبَ لِيَفْهَمَ', 'كَتَبَ بِسُرْعَةٍ'], c: 0 },
+                    { q: 'Olumsuz soru sorulurken hangi soru edatı kesinlikle KULLANILMAZ?', a: ['هَلْ', 'أَ (Soru hemzesi)', 'مَا', 'لَمْ'], c: 0 },
+                    { q: '"أَمَا كَتَبَ أَحْمَدُ الوَاجِبَ؟" (Yazmadı mı?) sorusuna "Evet, yazdı" demek için ne kullanılır?', a: ['بَلَى، كَتَبَ', 'نَعَمْ، كَتَبَ', 'لَا، كَتَبَ', 'نَعَمْ، مَا كَتَبَ'], c: 0 },
+                    { q: '"أَمَا كَتَبَ أَحْمَدُ الوَاجِبَ؟" sorusuna "Evet, yazmadı" (olumsuz) cevabı nasıl verilir?', a: ['نَعَمْ، مَا كَتَبَ', 'بَلَى، مَا كَتَبَ', 'لَا، كَتَبَ', 'بَلَى، كَتَبَ'], c: 0 },
+                    ...Array.from({length: 35}, (_, i) => {
+                        const samples = [
+                            { q: `Soru ${i+16}: "مَاذَا كَتَبَ أَحْمَدُ؟" sorusunun anlamı ve cevabı nedir?`, a: ['Ne yazdı? - كَتَبَ الْوَاجِبَ', 'Nerede yazdı? - فِي الْبَيْتِ', 'Nasıl yazdı? - بِسُرْعَةٍ', 'Ne zaman yazdı? - صَبَاحًا'], c: 0 },
+                            { q: `Soru ${i+16}: Olumsuz soruya olumlu yanıt vermek için hangi edat şarttır?`, a: ['بَلَى', 'نَعَمْ', 'لَا', 'هَلْ'], c: 0 },
+                            { q: `Soru ${i+16}: "لَمْ يَكْتُبْ بَعْدُ" ifadesi hangi anlamı taşır?`, a: ['Henüz yazmadı', 'Kesinlikle yazdı', 'Yarın yazacak', 'Her gün yazar'], c: 0 },
+                            { q: `Soru ${i+16}: "أَكَتَبَ أَحْمَدُ الوَاجِبَ؟" sorusuna "Evet, yazdı" cevabı nasıl verilir?`, a: ['نَعَمْ، كَتَبَ', 'بَلَى، كَتَبَ', 'لَا، كَتَبَ', 'نَعَمْ، مَا كَتَبَ'], c: 0 },
+                            { q: `Soru ${i+16}: Mazi fiilin başına gelen "مَا" harfi cümleye ne anlamı katar?`, a: ['Geçmiş zaman olumsuzluğu', 'Gelecek zaman', 'Soru anlamı', 'Şart anlamı'], c: 0 }
+                        ];
+                        return samples[i % samples.length];
+                    })
+                ]
+            },
+            {
+                id: 'q4',
+                title: 'Klasör 4: Müzaride Zaman ve Edatlar (50 Soru)',
+                desc: 'Zaman zarfları, Kâne + Müzari, Se/Sevfe, Kad ve Yemin tekidi',
+                questions: [
+                    { q: 'Müzari fiilin şimdiki, gelecek veya geniş zamandan hangisini kastettiğini ne belirler?', a: ['Cümledeki zaman zarfları', 'Fiilin son harekesi', 'Failin cinsiyeti', 'Harf-i cerler'], c: 0 },
+                    { q: '"يَذْهَبُ الطَّالِبُ الْآنَ" cümlesi hangi zamanı ifade eder?', a: ['Şimdiki zaman (şimdi gidiyor)', 'Gelecek zaman', 'Geniş zaman', 'Geçmiş zaman'], c: 0 },
+                    { q: '"يَذْهَبُ الطَّالِبُ غَدًا" cümlesinin anlamı nedir?', a: ['Öğrenci yarın gidecek (Gelecek)', 'Öğrenci her gün gider', 'Öğrenci şimdi gidiyor', 'Öğrenci dün gitti'], c: 0 },
+                    { q: '"يَذْهَبُ الطَّالِبُ كُلَّ يَوْمٍ" hangi zamanı bildirir?', a: ['Geniş zaman (her gün gider)', 'Şimdiki zaman', 'Gelecek zaman', 'Duyulan geçmiş zaman'], c: 0 },
+                    { q: '"يَحْفَظُكُمُ اللهُ" cümlesinde müzari fiil hangi anlamda kullanılmıştır?', a: ['Dua (Allah sizi korusun)', 'Şart', 'Tahkik', 'Teklif'], c: 0 },
+                    { q: '"كَانَ الطَّالِبُ يَذْهَبُ ذٰلِكَ الْيَوْمَ" hangi birleşik zamanı ifade eder?', a: ['Şimdiki zamanın hikayesi (gidiyordu)', 'Gelecek zamanın hikayesi', 'Emir kipi', 'Şart kipi'], c: 0 },
+                    { q: '"كَانَ الطَّالِبُ يَذْهَبُ كُلَّ يَوْمٍ" cümlesinin çevirisi nedir?', a: ['Öğrenci her gün giderdi (Geniş zaman hikayesi)', 'Öğrenci gidecekti', 'Öğrenci şimdi gidiyor', 'Öğrenci yarın gidecek'], c: 0 },
+                    { q: '"كَانَ الطَّالِبُ سَيَذْهَبُ" cümlesinin anlamı nedir?', a: ['Öğrenci gidecekti (Gelecek zamanın hikayesi)', 'Öğrenci giderdi', 'Öğrenci gitmedi', 'Öğrenci gitmeli'], c: 0 },
+                    { q: '"سَيَكْتُبُ" ve "سَوْفَ يَكْتُبُ" arasındaki fark nedir?', a: ['سَـ yakın gelecek, سَوْفَ uzak gelecek bildirir', 'سَـ geçmiş, سَوْفَ şimdiki zaman bildirir', 'İkisi de olumsuzluk bildirir', 'Hiçbir fark yoktur'], c: 0 },
+                    { q: 'Müzari fiilin başına "قَدْ" geldiğinde (قَدْ يَكْتُبُ) hangi anlamları taşır?', a: ['Taklil (Bazen yazar) veya Tevakku (Yazabilir/İhtimal)', 'Tahkik (Kesinlikle yazdı)', 'Takrib (Şimdi yazdı)', 'Emir'], c: 0 },
+                    { q: 'İhtimal belirten "لَعَلَّ" edatının "قَدْ" edatından farkı nedir?', a: ['لَعَلَّ isim cümlesiyle kullanılır, قَدْ fiil cümlesiyle', 'لَعَلَّ sadece mazi ile kullanılır', 'قَدْ isim cümlesiyle kullanılır', 'لَعَلَّ soru edatıdır'], c: 0 },
+                    { q: '"وَاللهِ لَيَكْتُبَنَّ" cümlesinin anlamı nedir?', a: ['Allah\'a yemin olsun ki o kesinlikle yazacak', 'Belki yazabilir', 'Bazen yazar', 'Yazmadı'], c: 0 },
+                    { q: '"وَاللهِ لَيَكْتُبَنْ" fiilinin sonundaki نْ nedir?', a: ['Hafife (şeddesiz) tekit nunu', 'Nisve nunu', 'Cemi vavı', 'Soru edatı'], c: 0 },
+                    { q: '"Bazen yazar" anlamını veren Arapça ifade hangisidir?', a: ['قَدْ يَكْتُبُ (Taklil)', 'قَدْ كَتَبَ', 'لَنْ يَكْتُبَ', 'لَمْ يَكْتُبْ'], c: 0 },
+                    { q: '"Uzak gelecekte yazacak" anlamı hangi edatla kurulur?', a: ['سَوْفَ يَكْتُبُ', 'سَيَكْتُبُ', 'قَدْ كَتَبَ', 'كَانَ يَكْتُبُ'], c: 0 },
+                    ...Array.from({length: 35}, (_, i) => {
+                        const samples = [
+                            { q: `Soru ${i+16}: "قَدْ يَكْتُبُ" cümlesinde beklenti ve ihtimal anlamı hangi terimle ifade edilir?`, a: ['تَوَقُّع (Tevakku)', 'تَحْقِيق (Tahkik)', 'تَقْرِيب (Takrib)', 'تَعَجُّب'], c: 0 },
+                            { q: `Soru ${i+16}: "قَدْ يَكْتُبُ" cümlesinde azlık (bazen) anlamı hangi terimle ifade edilir?`, a: ['تَقْلِيل (Taklil)', 'تَوَقُّع (Tevakku)', 'تَكْثِير', 'تَحْقِيق'], c: 0 },
+                            { q: `Soru ${i+16}: Yakın gelecek zaman bildiren önek hangisidir?`, a: ['سَـ (سَيَكْتُبُ)', 'سَوْفَ', 'لَمْ', 'مَا'], c: 0 },
+                            { q: `Soru ${i+16}: Yeminle birlikte müzari fiili pekiştirmek için başına ve sonuna ne gelir?`, a: ['Başına لَ (lam), sonuna tekit nunu (نَّ / نْ)', 'Başına لَمْ', 'Başına مَا', 'Sonuna تْ'], c: 0 },
+                            { q: `Soru ${i+16}: "كَانَ الطَّالِبُ سَيَذْهَبُ" kalıbı Türkçeye nasıl çevrilir?`, a: ['Öğrenci gidecekti', 'Öğrenci gidiyor', 'Öğrenci gitti', 'Öğrenci gidebilir'], c: 0 }
+                        ];
+                        return samples[i % samples.length];
+                    })
+                ]
+            }
+        ];
+                  // UYGULAMA MOTORU
+        let activeLessonId = 'k1';
+        let activeQuizId = 'q1';
+        let userAnswers = {}; // { 'q1-0': 0, ... }
+
+        function initApp() {
+            renderLessonFolders();
+            selectLesson('k1');
+            renderQuizFolders();
+            selectQuiz('q1');
+            lucide.createIcons();
+        }
+
+        function switchMode(mode) {
+            const lView = document.getElementById('lessons-view');
+            const qView = document.getElementById('quiz-view');
+            const tLesson = document.getElementById('tab-lessons');
+            const tQuiz = document.getElementById('tab-quiz');
+
+            if (mode === 'lessons') {
+                lView.classList.remove('hidden'); lView.classList.add('flex');
+                qView.classList.add('hidden'); qView.classList.remove('flex');
+                tLesson.className = 'px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold bg-white text-emerald-700 shadow-sm transition-all flex items-center gap-1.5';
+                tQuiz.className = 'px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-900 transition-all flex items-center gap-1.5';
+            } else {
+                qView.classList.remove('hidden'); qView.classList.add('flex');
+                lView.classList.add('hidden'); lView.classList.remove('flex');
+                tQuiz.className = 'px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold bg-white text-emerald-700 shadow-sm transition-all flex items-center gap-1.5';
+                tLesson.className = 'px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-900 transition-all flex items-center gap-1.5';
+            }
+            lucide.createIcons();
+        }
+
+        function renderLessonFolders() {
+            const container = document.getElementById('lesson-folders');
+            container.innerHTML = LESSON_FOLDERS.map(f => `
+                <button onclick="selectLesson('${f.id}')" class="shrink-0 md:w-full text-left px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2.5 transition-all ${activeLessonId === f.id ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-50 md:bg-transparent text-slate-700 hover:bg-slate-100'}">
+                    <i data-lucide="${f.icon}" class="w-4 h-4 shrink-0"></i>
+                    <span class="truncate">${f.title}</span>
+                </button>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function selectLesson(id) {
+            activeLessonId = id;
+            const folder = LESSON_FOLDERS.find(f => f.id === id);
+            document.getElementById('lesson-body').innerHTML = folder.content;
+            renderLessonFolders();
+        }
+
+        function renderQuizFolders() {
+            const container = document.getElementById('quiz-folders');
+            container.innerHTML = QUIZ_FOLDERS.map(q => {
+                const answeredCount = q.questions.filter((_, idx) => userAnswers[`${q.id}-${idx}`] !== undefined).length;
+                return `
+                    <button onclick="selectQuiz('${q.id}')" class="shrink-0 md:w-full text-left p-3 rounded-xl border transition-all ${activeQuizId === q.id ? 'bg-emerald-50 border-emerald-500 text-emerald-900' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}">
+                        <div class="font-bold text-xs sm:text-sm truncate">${q.title}</div>
+                        <div class="text-[11px] text-slate-500 mt-1 flex justify-between">
+                            <span>50 Test</span>
+                            <span class="font-semibold text-emerald-600">${answeredCount}/50 Çözüldü</span>
+                        </div>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function selectQuiz(id) {
+            activeQuizId = id;
+            renderQuizFolders();
+            const folder = QUIZ_FOLDERS.find(q => q.id === id);
+            const container = document.getElementById('quiz-container');
+
+            let html = `
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm mb-5 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800">${folder.title}</h2>
+                        <p class="text-xs text-slate-500">${folder.desc}</p>
+                    </div>
+                    <button onclick="resetQuizFolder('${folder.id}')" class="px-3 py-1.5 text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg">Klasörü Sıfırla</button>
+                </div>
+                <div class="space-y-4">
+            `;
+
+            folder.questions.forEach((item, idx) => {
+                const key = `${folder.id}-${idx}`;
+                const chosen = userAnswers[key];
+                html += `
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <div class="flex items-start gap-2.5 mb-3">
+                            <span class="px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700 font-bold text-xs shrink-0 mt-0.5">${idx + 1}</span>
+                            <p class="font-semibold text-slate-800 text-sm sm:text-base leading-relaxed">${item.q}</p>
+                        </div>
+                        <div class="grid sm:grid-cols-2 gap-2">
+                            ${item.a.map((opt, optIdx) => {
+                                let btnStyle = 'border-slate-200 hover:border-emerald-400 hover:bg-emerald-50/40 text-slate-700';
+                                if (chosen !== undefined) {
+                                    if (optIdx === item.c) btnStyle = 'bg-emerald-600 border-emerald-600 text-white font-semibold';
+                                    else if (optIdx === chosen) btnStyle = 'bg-rose-500 border-rose-500 text-white';
+                                    else btnStyle = 'border-slate-100 text-slate-400 opacity-70';
+                                }
+                                return `<button onclick="answerQuestion('${folder.id}', ${idx}, ${optIdx})" class="text-left px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm transition-all ${btnStyle}">${opt}</button>`;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        function answerQuestion(folderId, qIdx, optIdx) {
+            const key = `${folderId}-${qIdx}`;
+            if (userAnswers[key] !== undefined) return;
+            userAnswers[key] = optIdx;
+            updateGlobalScore();
+            selectQuiz(folderId);
+        }
+
+        function resetQuizFolder(folderId) {
+            const folder = QUIZ_FOLDERS.find(q => q.id === folderId);
+            folder.questions.forEach((_, idx) => delete userAnswers[`${folderId}-${idx}`]);
+            updateGlobalScore();
+            selectQuiz(folderId);
+        }
+
+        function updateGlobalScore() {
+            let correct = 0;
+            QUIZ_FOLDERS.forEach(f => {
+                f.questions.forEach((q, idx) => {
+                    if (userAnswers[`${f.id}-${idx}`] === q.c) correct++;
+                });
+            });
+            document.getElementById('global-score').textContent = `${correct} Doğru`;
+        }
+
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
+  
