@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ders Notlarım - Fotoğraflı Arşiv</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .note-card { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .note-card:hover { transform: translateY(-2px); }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .modal-animate { animation: fadeIn 0.15s ease-out forwards; }
+    </style>
+</head>
+<body class="text-slate-800 h-screen flex overflow-hidden selection:bg-indigo-100 selection:text-indigo-700">
+      <!-- Mobil Menü Karartması -->
+    <div id="sidebar-backdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/50 z-20 hidden lg:hidden backdrop-blur-sm transition-opacity"></div>
+
+    <!-- SOL KENAR ÇUBUĞU -->
+    <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 z-30 w-72 bg-white border-r border-slate-200 flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-in-out">
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-sm shadow-indigo-200">
+                    <i data-lucide="book-open" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-slate-800 text-base leading-tight">Ders Notlarım</h1>
+                    <p class="text-xs text-slate-400">Fotoğraflı Çalışma Arşivi</p>
+                </div>
+            </div>
+            <button onclick="toggleSidebar()" class="lg:hidden text-slate-400 hover:text-slate-600 p-1">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <div class="p-4">
+            <button onclick="openFolderModal()" class="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-xl flex items-center justify-center gap-2 shadow-sm shadow-indigo-200 transition-colors">
+                <i data-lucide="folder-plus" class="w-4 h-4"></i>
+                Yeni Ders Klasörü
+            </button>
+        </div>
+                <div class="px-5 pb-2 flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Ders Klasörleri</span>
+            <span id="total-folders-badge" class="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">0</span>
+        </div>
+
+        <div id="folder-list" class="flex-1 overflow-y-auto px-3 space-y-1 pb-4">
+            <!-- JS ile doldurulacak -->
+        </div>
+
+        <div class="p-4 border-t border-slate-100 bg-slate-50/70 text-xs text-slate-500 flex items-center justify-between">
+            <span class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                Otomatik Kayıt
+            </span>
+            <span id="total-notes-count" class="font-medium text-slate-700">0 Not</span>
+        </div>
+    </aside>
+        <main class="flex-1 flex flex-col min-w-0 bg-slate-50/50">
+        <header class="bg-white border-b border-slate-200 px-4 sm:px-8 py-4 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-10">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+                <div class="flex items-center gap-2.5">
+                    <div id="current-folder-color" class="w-3.5 h-3.5 rounded-full bg-indigo-500 hidden"></div>
+                    <h2 id="current-folder-title" class="text-xl font-bold text-slate-800 truncate">Tüm Notlar</h2>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 sm:gap-3 flex-1 sm:flex-initial justify-end">
+                <div class="relative w-full sm:w-64">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                    <input type="text" id="search-input" oninput="renderNotes()" placeholder="Notlarda ara..." 
+                        class="w-full pl-9 pr-4 py-2 bg-slate-100 border border-transparent focus:bg-white focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 rounded-xl text-sm outline-none transition-all">
+                </div>
+
+                <div class="hidden sm:flex items-center gap-1 border-l border-slate-200 pl-3">
+                    <button onclick="exportData()" title="Yedekle" class="p-2 text-slate-500 hover:text-indigo-600 rounded-lg"><i data-lucide="download" class="w-4 h-4"></i></button>
+                    <label title="Yükle" class="p-2 text-slate-500 hover:text-indigo-600 rounded-lg cursor-pointer"><i data-lucide="upload" class="w-4 h-4"></i><input type="file" id="import-file" accept=".json" onchange="importData(event)" class="hidden"></label>
+                </div>
+
+                <button onclick="openNoteModal()" class="py-2 px-4 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium rounded-xl flex items-center gap-2 shadow-sm transition-colors shrink-0">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">Yeni Not</span>
+                </button>
+            </div>
+        </header>
+                <div class="flex-1 overflow-y-auto p-4 sm:p-8">
+            <div id="notes-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 max-w-7xl mx-auto"></div>
+            <div id="empty-state" class="hidden flex-col items-center justify-center text-center py-20 px-4 max-w-md mx-auto">
+                <div class="w-16 h-16 bg-indigo-50 text-indigo-500 rounded-2xl flex items-center justify-center mb-4"><i data-lucide="file-text" class="w-8 h-8"></i></div>
+                <h3 id="empty-state-title" class="text-lg font-semibold text-slate-800 mb-1">Henüz hiç not yok</h3>
+                <p id="empty-state-desc" class="text-sm text-slate-500 mb-6">Bu ders klasörüne ilk ders notunu ekleyebilirsin.</p>
+                <button onclick="openNoteModal()" class="py-2.5 px-5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-xl inline-flex items-center gap-2 shadow-sm"><i data-lucide="plus" class="w-4 h-4"></i>İlk Notunu Oluştur</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- KLASÖR MODALI -->
+    <div id="folder-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden modal-animate">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <h3 id="folder-modal-title" class="font-bold text-slate-800">Yeni Ders Klasörü</h3>
+                <button onclick="closeFolderModal()" class="text-slate-400 hover:text-slate-600 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form onsubmit="saveFolder(event)" class="p-6 space-y-5">
+                <input type="hidden" id="edit-folder-id">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">Ders Adı</label>
+                    <input type="text" id="folder-name-input" required placeholder="Örn: Matematik, Fizik..." class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Klasör Rengi</label>
+                    <div id="color-picker" class="flex flex-wrap gap-2.5"></div>
+                </div>
+                <div class="flex items-center justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeFolderModal()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl">İptal</button>
+                    <button type="submit" class="px-5 py-2 text-sm font-medium bg-indigo-600 text-white rounded-xl shadow-sm">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+        <!-- NOT EKLEME MODALI (FOTOĞRAF DESTEKLİ) -->
+    <div id="note-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] modal-animate">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
+                <h3 id="note-modal-title" class="font-bold text-slate-800">Yeni Ders Notu</h3>
+                <button onclick="closeNoteModal()" class="text-slate-400 hover:text-slate-600 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form onsubmit="saveNote(event)" class="p-6 space-y-4 overflow-y-auto flex-1">
+                <input type="hidden" id="edit-note-id">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">Ders Klasörü</label>
+                        <select id="note-folder-select" required class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm bg-white outline-none focus:border-indigo-500"></select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">Konu Başlığı</label>
+                        <input type="text" id="note-title-input" required placeholder="Örn: Türev Kuralları" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">Ders Notu İçeriği</label>
+                    <textarea id="note-content-input" required rows="6" placeholder="Notlarını buraya yaz..." class="w-full p-4 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-500 resize-y"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">Fotoğraf Ekle (İsteğe Bağlı)</label>
+                    <div class="flex items-center gap-3">
+                        <label class="flex-1 cursor-pointer py-2.5 px-4 border border-dashed border-slate-300 hover:border-indigo-500 bg-slate-50 hover:bg-indigo-50/50 rounded-xl flex items-center justify-center gap-2 text-sm text-slate-600 transition-colors">
+                            <i data-lucide="image" class="w-4 h-4 text-indigo-600"></i>
+                            <span id="image-file-label">Fotoğraf Seç veya Çek</span>
+                            <input type="file" id="note-image-input" accept="image/*" onchange="handleImageUpload(event)" class="hidden">
+                        </label>
+                        <button type="button" id="remove-image-btn" onclick="removeNoteImage()" class="hidden py-2.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-sm transition-colors" title="Fotoğrafı Kaldır">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    <div id="image-preview-container" class="mt-3 hidden relative w-full h-36 bg-slate-100 rounded-xl overflow-hidden border border-slate-200">
+                        <img id="image-preview" src="" alt="Önizleme" class="w-full h-full object-cover">
+                    </div>
+                </div>
+                <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                    <button type="button" onclick="closeNoteModal()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl">İptal</button>
+                    <button type="submit" class="px-6 py-2 text-sm font-medium bg-indigo-600 text-white rounded-xl shadow-sm">Notu Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+        <!-- NOT OKUMA MODALI -->
+    <div id="view-note-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] modal-animate">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-2.5">
+                    <span id="view-note-badge" class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-600">Ders</span>
+                    <span id="view-note-date" class="text-xs text-slate-400">Tarih</span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <button id="view-edit-btn" class="p-2 text-slate-500 hover:text-indigo-600 rounded-lg" title="Düzenle"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                    <button onclick="closeViewNoteModal()" class="p-2 text-slate-400 hover:text-slate-600 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+            </div>
+            <div class="p-6 sm:p-8 overflow-y-auto flex-1 space-y-4">
+                <h2 id="view-note-title" class="text-2xl font-bold text-slate-800">Not Başlığı</h2>
+                <div id="view-note-image-container" class="hidden rounded-xl overflow-hidden border border-slate-200 max-h-80 bg-slate-900 flex items-center justify-center">
+                    <img id="view-note-img" src="" alt="Not Görseli" class="max-h-80 w-auto object-contain">
+                </div>
+                <div id="view-note-content" class="text-slate-600 text-sm sm:text-base leading-relaxed whitespace-pre-wrap"></div>
+            </div>
+        </div>
+    </div>
+        <!-- JAVASCRIPT MANTIĞI - 1/3 -->
+    <script>
+        const FOLDER_COLORS = [
+            { name: 'İndigo', hex: '#4f46e5' }, { name: 'Zümrüt', hex: '#10b981' },
+            { name: 'Gül', hex: '#f43f5e' }, { name: 'Kehribar', hex: '#f59e0b' },
+            { name: 'Gökyüzü', hex: '#0ea5e9' }, { name: 'Menekşe', hex: '#8b5cf6' },
+            { name: 'Turuncu', hex: '#f97316' }, { name: 'Arduvaz', hex: '#475569' }
+        ];
+
+        const DEFAULT_DATA = {
+            folders: [
+                { id: 'f-1', name: 'Matematik', color: '#4f46e5' },
+                { id: 'f-2', name: 'Fizik', color: '#0ea5e9' }
+            ],
+            notes: [
+                {
+                    id: 'n-1', folderId: 'f-1', title: 'Türev Kuralları',
+                    content: '1. Sabit sayının türevi 0\'dır.\n2. f(x) = x^n ise f\'(x) = n * x^(n-1)',
+                    image: null, updatedAt: new Date().toISOString()
+                }
+            ]
+        };
+
+        let appData = { folders: [], notes: [] };
+        let activeFolderId = 'all';
+        let selectedColor = FOLDER_COLORS[0].hex;
+        let currentNoteImageBase64 = null;
+
+        function init() {
+            const saved = localStorage.getItem('ders_notlari_app_v2');
+            if (saved) {
+                try { appData = JSON.parse(saved); } catch (e) { appData = JSON.parse(JSON.stringify(DEFAULT_DATA)); }
+            } else {
+                appData = JSON.parse(JSON.stringify(DEFAULT_DATA));
+                saveToStorage();
+            }
+            renderColorPicker();
+            renderFolders();
+            renderNotes();
+            lucide.createIcons();
+        }
+
+        function saveToStorage() {
+            localStorage.setItem('ders_notlari_app_v2', JSON.stringify(appData));
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+            document.getElementById('sidebar-backdrop').classList.toggle('hidden');
+        }
+              <!-- JAVASCRIPT MANTIĞI - 2/3 -->
+        function renderFolders() {
+            const folderList = document.getElementById('folder-list');
+            document.getElementById('total-folders-badge').textContent = appData.folders.length;
+            document.getElementById('total-notes-count').textContent = `${appData.notes.length} Not`;
+
+            let html = `
+                <button onclick="selectFolder('all')" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${activeFolderId === 'all' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}">
+                    <div class="flex items-center gap-3"><i data-lucide="layers" class="w-4 h-4"></i><span>Tüm Notlar</span></div>
+                    <span class="text-xs px-2 py-0.5 rounded-full">${appData.notes.length}</span>
+                </button>
+                <div class="my-2 border-t border-slate-100"></div>
+            `;
+
+            appData.folders.forEach(folder => {
+                const count = appData.notes.filter(n => n.folderId === folder.id).length;
+                const isActive = activeFolderId === folder.id;
+                html += `
+                    <div class="group relative flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer ${isActive ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50'}" onclick="selectFolder('${folder.id}')">
+                        <div class="flex items-center gap-3 min-w-0 pr-2">
+                            <span class="w-3 h-3 rounded-full shrink-0" style="background-color: ${folder.color}"></span>
+                            <span class="truncate">${escapeHtml(folder.name)}</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <span class="text-xs px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-500 group-hover:hidden">${count}</span>
+                            <div class="hidden group-hover:flex items-center gap-0.5" onclick="event.stopPropagation()">
+                                <button onclick="openFolderModal('${folder.id}')" class="p-1 text-slate-400 hover:text-indigo-600"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+                                <button onclick="deleteFolder('${folder.id}')" class="p-1 text-slate-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            folderList.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function selectFolder(id) {
+            activeFolderId = id;
+            const titleEl = document.getElementById('current-folder-title');
+            const colorEl = document.getElementById('current-folder-color');
+            if (id === 'all') { titleEl.textContent = 'Tüm Notlar'; colorEl.classList.add('hidden'); }
+            else {
+                const folder = appData.folders.find(f => f.id === id);
+                if (folder) { titleEl.textContent = folder.name; colorEl.style.backgroundColor = folder.color; colorEl.classList.remove('hidden'); }
+            }
+            if (window.innerWidth < 1024) toggleSidebar();
+            renderFolders();
+            renderNotes();
+        }
+
+        function renderNotes() {
+            const grid = document.getElementById('notes-grid');
+            const emptyState = document.getElementById('empty-state');
+            const query = document.getElementById('search-input').value.toLowerCase().trim();
+
+            let filtered = appData.notes.filter(n => (activeFolderId === 'all' || n.folderId === activeFolderId) && (!query || n.title.toLowerCase().includes(query) || n.content.toLowerCase().includes(query)));
+            filtered.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '';
+                emptyState.classList.remove('hidden'); emptyState.classList.add('flex');
+                return;
+            }
+            emptyState.classList.add('hidden'); emptyState.classList.remove('flex');
+
+            grid.innerHTML = filtered.map(note => {
+                const folder = appData.folders.find(f => f.id === note.folderId) || { name: 'Genel', color: '#64748b' };
+                const date = new Date(note.updatedAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
+                return `
+                    <div onclick="openViewNoteModal('${note.id}')" class="note-card bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-md cursor-pointer flex flex-col justify-between group">
+                        <div>
+                            <div class="flex items-center justify-between gap-2 mb-3">
+                                <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700">
+                                    <span class="w-2 h-2 rounded-full" style="background-color: ${folder.color}"></span>${escapeHtml(folder.name)}
+                                </span>
+                                <div class="flex items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
+                                    <button onclick="openNoteModal('${note.id}')" class="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+                                    <button onclick="deleteNote('${note.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                                </div>
+                            </div>
+                            <h3 class="font-bold text-slate-800 text-base mb-2 line-clamp-1 group-hover:text-indigo-600">${escapeHtml(note.title)}</h3>
+                            <p class="text-slate-500 text-sm leading-relaxed line-clamp-3 mb-3 whitespace-pre-line">${escapeHtml(note.content)}</p>
+                            ${note.image ? `<div class="mb-3 h-28 rounded-xl overflow-hidden bg-slate-100 border border-slate-200"><img src="${note.image}" class="w-full h-full object-cover"></div>` : ''}
+                        </div>
+                        <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+                            <span>${date}</span>
+                            <span class="text-indigo-600 font-medium opacity-0 group-hover:opacity-100">Oku &rarr;</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function renderColorPicker() {
+            document.getElementById('color-picker').innerHTML = FOLDER_COLORS.map(c => `
+                <button type="button" onclick="selectFolderColor('${c.hex}')" class="w-8 h-8 rounded-full flex items-center justify-center transition-transform hover:scale-110 ${selectedColor === c.hex ? 'ring-2 ring-offset-2 ring-slate-800 scale-110' : ''}" style="background-color: ${c.hex}">
+                    ${selectedColor === c.hex ? '<i data-lucide="check" class="w-4 h-4 text-white"></i>' : ''}
+                </button>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function selectFolderColor(hex) { selectedColor = hex; renderColorPicker(); }
+
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(uploadEvent) {
+                currentNoteImageBase64 = uploadEvent.target.result;
+                document.getElementById('image-preview').src = currentNoteImageBase64;
+                document.getElementById('image-preview-container').classList.remove('hidden');
+                document.getElementById('remove-image-btn').classList.remove('hidden');
+                document.getElementById('image-file-label').textContent = 'Fotoğraf Değiştirildi';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeNoteImage() {
+            currentNoteImageBase64 = null;
+            document.getElementById('note-image-input').value = '';
+            document.getElementById('image-preview-container').classList.add('hidden');
+            document.getElementById('remove-image-btn').classList.add('hidden');
+            document.getElementById('image-file-label').textContent = 'Fotoğraf Seç veya Çek';
+        }
+              <!-- JAVASCRIPT MANTIĞI - 3/3 -->
+        function openFolderModal(id = null) {
+            const modal = document.getElementById('folder-modal');
+            const folder = id ? appData.folders.find(f => f.id === id) : null;
+            document.getElementById('folder-modal-title').textContent = folder ? 'Klasörü Düzenle' : 'Yeni Ders Klasörü';
+            document.getElementById('edit-folder-id').value = folder ? folder.id : '';
+            document.getElementById('folder-name-input').value = folder ? folder.name : '';
+            if (folder) selectedColor = folder.color;
+            renderColorPicker();
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+        }
+        function closeFolderModal() { document.getElementById('folder-modal').classList.add('hidden'); document.getElementById('folder-modal').classList.remove('flex'); }
+
+        function saveFolder(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-folder-id').value;
+            const name = document.getElementById('folder-name-input').value.trim();
+            if (!name) return;
+            if (id) {
+                const f = appData.folders.find(x => x.id === id);
+                if (f) { f.name = name; f.color = selectedColor; }
+            } else {
+                const nf = { id: 'f-' + Date.now(), name, color: selectedColor };
+                appData.folders.push(nf);
+                activeFolderId = nf.id;
+            }
+            saveToStorage(); closeFolderModal(); selectFolder(activeFolderId);
+        }
+
+        function deleteFolder(id) {
+            if (confirm('Klasör silinsin mi?')) {
+                appData.folders = appData.folders.filter(f => f.id !== id);
+                appData.notes = appData.notes.filter(n => n.folderId !== id);
+                if (activeFolderId === id) activeFolderId = 'all';
+                saveToStorage(); selectFolder(activeFolderId);
+            }
+        }
+
+        function openNoteModal(id = null) {
+            if (appData.folders.length === 0) { alert('Önce ders klasörü oluşturmalısın!'); openFolderModal(); return; }
+            const note = id ? appData.notes.find(n => n.id === id) : null;
+            document.getElementById('note-modal-title').textContent = note ? 'Ders Notunu Düzenle' : 'Yeni Ders Notu';
+            document.getElementById('edit-note-id').value = note ? note.id : '';
+            document.getElementById('note-folder-select').innerHTML = appData.folders.map(f => `<option value="${f.id}">${escapeHtml(f.name)}</option>`).join('');
+            if (note) document.getElementById('note-folder-select').value = note.folderId;
+            document.getElementById('note-title-input').value = note ? note.title : '';
+            document.getElementById('note-content-input').value = note ? note.content : '';
+
+            currentNoteImageBase64 = note ? note.image : null;
+            if (currentNoteImageBase64) {
+                document.getElementById('image-preview').src = currentNoteImageBase64;
+                document.getElementById('image-preview-container').classList.remove('hidden');
+                document.getElementById('remove-image-btn').classList.remove('hidden');
+                document.getElementById('image-file-label').textContent = 'Fotoğraf Yüklü';
+            } else {
+                removeNoteImage();
+            }
+
+            document.getElementById('note-modal').classList.remove('hidden'); document.getElementById('note-modal').classList.add('flex');
+        }
+        function closeNoteModal() { document.getElementById('note-modal').classList.add('hidden'); document.getElementById('note-modal').classList.remove('flex'); }
+
+        function saveNote(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-note-id').value;
+            const folderId = document.getElementById('note-folder-select').value;
+            const title = document.getElementById('note-title-input').value.trim();
+            const content = document.getElementById('note-content-input').value.trim();
+            if (!title || !content) return;
+
+            if (id) {
+                const n = appData.notes.find(x => x.id === id);
+                if (n) { n.folderId = folderId; n.title = title; n.content = content; n.image = currentNoteImageBase64; n.updatedAt = new Date().toISOString(); }
+            } else {
+                appData.notes.push({ id: 'n-' + Date.now(), folderId, title, content, image: currentNoteImageBase64, updatedAt: new Date().toISOString() });
+            }
+            saveToStorage(); closeNoteModal(); renderFolders(); renderNotes();
+        }
+
+        function deleteNote(id) {
+            if (confirm('Not silinsin mi?')) {
+                appData.notes = appData.notes.filter(n => n.id !== id);
+                saveToStorage(); renderFolders(); renderNotes();
+            }
+        }
+
+        function openViewNoteModal(id) {
+            const note = appData.notes.find(n => n.id === id);
+            if (!note) return;
+            const folder = appData.folders.find(f => f.id === note.folderId) || { name: 'Genel', color: '#64748b' };
+            const badge = document.getElementById('view-note-badge');
+            badge.textContent = folder.name; badge.style.backgroundColor = folder.color + '18'; badge.style.color = folder.color;
+
+            document.getElementById('view-note-date').textContent = new Date(note.updatedAt).toLocaleString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+            document.getElementById('view-note-title').textContent = note.title;
+            document.getElementById('view-note-content').textContent = note.content;
+
+            const imgContainer = document.getElementById('view-note-image-container');
+            if (note.image) {
+                document.getElementById('view-note-img').src = note.image;
+                imgContainer.classList.remove('hidden');
+            } else {
+                imgContainer.classList.add('hidden');
+            }
+
+            document.getElementById('view-edit-btn').onclick = () => { closeViewNoteModal(); openNoteModal(note.id); };
+            document.getElementById('view-note-modal').classList.remove('hidden'); document.getElementById('view-note-modal').classList.add('flex');
+        }
+        function closeViewNoteModal() { document.getElementById('view-note-modal').classList.add('hidden'); document.getElementById('view-note-modal').classList.remove('flex'); }
+
+        function exportData() {
+            const blob = new Blob([JSON.stringify(appData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = `notlar-yedek.json`; a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                try {
+                    const imported = JSON.parse(ev.target.result);
+                    if (imported.folders && imported.notes) {
+                        appData = imported; activeFolderId = 'all'; saveToStorage(); selectFolder('all'); alert('Yüklendi!');
+                    }
+                } catch (err) { alert('Hatalı dosya.'); }
+                e.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { closeFolderModal(); closeNoteModal(); closeViewNoteModal(); }
+        });
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
